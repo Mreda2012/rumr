@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Group Chat</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        #messages {
+            height: 300px;
+            overflow-y: scroll;
+            border: 1px solid #ccc;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+        #messageInput {
+            width: 80%;
+            padding: 10px;
+        }
+        #sendButton {
+            padding: 10px 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Group Chat</h1>
+    <div id="messages"></div>
+    <input type="text" id="messageInput" placeholder="Type your message...">
+    <button id="sendButton">Send</button>
+
+    <script>
+        const socket = io();
+
+        socket.on('message', function(data) {
+            const messageElement = document.createElement('div');
+            messageElement.innerHTML = `<span style="color: ${data.color};">${data.text}</span>`;
+            document.getElementById('messages').appendChild(messageElement);
+        });
+
+        document.getElementById('sendButton').addEventListener('click', function() {
+            const message = document.getElementById('messageInput').value;
+            socket.send(message);
+            document.getElementById('messageInput').value = '';
+        });
+    </script>
+</body>
+</html>
