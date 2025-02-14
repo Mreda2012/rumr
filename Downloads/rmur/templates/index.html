@@ -8,43 +8,150 @@
     <style>
         body {
             font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        #chat-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            overflow-y: auto;
+            background-color: #fff;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
             margin: 20px;
         }
+
         #messages {
-            height: 300px;
-            overflow-y: scroll;
-            border: 1px solid #ccc;
+            flex: 1;
+            overflow-y: auto;
             padding: 10px;
-            margin-bottom: 10px;
         }
+
+        .message {
+            display: flex;
+            margin-bottom: 15px;
+        }
+
+        .message.user {
+            justify-content: flex-end;
+        }
+
+        .message.other {
+            justify-content: flex-start;
+        }
+
+        .message-bubble {
+            max-width: 70%;
+            padding: 10px 15px;
+            border-radius: 20px;
+            position: relative;
+        }
+
+        .message.user .message-bubble {
+            background-color: #007bff;
+            color: white;
+            border-bottom-right-radius: 5px;
+        }
+
+        .message.other .message-bubble {
+            background-color: #e9ecef;
+            color: black;
+            border-bottom-left-radius: 5px;
+        }
+
+        #input-container {
+            display: flex;
+            padding: 10px;
+            background-color: #fff;
+            border-top: 1px solid #ddd;
+        }
+
         #messageInput {
-            width: 80%;
+            flex: 1;
             padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 20px;
+            margin-right: 10px;
+            outline: none;
         }
+
         #sendButton {
             padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+        }
+
+        #sendButton:hover {
+            background-color: #0056b3;
         }
     </style>
 </head>
 <body>
-    <h1>Group Chat</h1>
-    <div id="messages"></div>
-    <input type="text" id="messageInput" placeholder="Type your message...">
-    <button id="sendButton">Send</button>
+    <div id="chat-container">
+        <div id="messages"></div>
+    </div>
+    <div id="input-container">
+        <input type="text" id="messageInput" placeholder="Type your message...">
+        <button id="sendButton">Send</button>
+    </div>
 
     <script>
         const socket = io();
 
+        // Function to add a message to the chat
+        function addMessage(text, color, isUser) {
+            const messagesDiv = document.getElementById('messages');
+            const messageDiv = document.createElement('div');
+            messageDiv.classList.add('message', isUser ? 'user' : 'other');
+
+            const bubbleDiv = document.createElement('div');
+            bubbleDiv.classList.add('message-bubble');
+            bubbleDiv.style.backgroundColor = color;
+            bubbleDiv.textContent = text;
+
+            messageDiv.appendChild(bubbleDiv);
+            messagesDiv.appendChild(messageDiv);
+
+            // Scroll to the bottom of the chat
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        // Handle incoming messages
         socket.on('message', function(data) {
-            const messageElement = document.createElement('div');
-            messageElement.innerHTML = `<span style="color: ${data.color};">${data.text}</span>`;
-            document.getElementById('messages').appendChild(messageElement);
+            addMessage(data.text, data.color, false);
         });
 
+        // Send message when the send button is clicked
         document.getElementById('sendButton').addEventListener('click', function() {
             const message = document.getElementById('messageInput').value;
-            socket.send(message);
-            document.getElementById('messageInput').value = '';
+            if (message.trim()) {
+                socket.send(message);
+                addMessage(message, user_colors[socket.id], true); // Display user's own message
+                document.getElementById('messageInput').value = '';
+            }
+        });
+
+        // Send message when Enter key is pressed
+        document.getElementById('messageInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                document.getElementById('sendButton').click();
+            }
+        });
+
+        // Store user colors (for demonstration purposes)
+        const user_colors = {};
+        socket.on('connect', function() {
+            user_colors[socket.id] = '#' + Math.floor(Math.random() * 16777215).toString(16); // Random color
         });
     </script>
 </body>
